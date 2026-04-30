@@ -18,33 +18,57 @@ public class SessionsController : ControllerBase
 
     // GET: api/sessions
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Session>>> GetSessions()
+    public async Task<ActionResult<IEnumerable<SessionDto>>> GetSessions()
     {
-        return await _context.Sessions
+        var sessions = await _context.Sessions
             .Include(s => s.Patient)
-            .Include(s => s.Metrics)
+            .Select(s => new SessionDto
+            {
+                Id = s.Id,
+                PatientId = s.PatientId,
+                PatientName = s.Patient.FirstName + " " + s.Patient.LastName,
+                ScheduledTime = s.ScheduledTime,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Difficulty = s.Difficulty,
+                Status = s.Status
+            })
             .ToListAsync();
+
+        return Ok(sessions);
     }
 
-    // GET: api/sessions/5
+    // GET: api/sessions/{id}
     [HttpGet("{id}")]
-    public async Task<ActionResult<Session>> GetSession(int id)
+    public async Task<ActionResult<SessionDto>> GetSession(int id)
     {
         var session = await _context.Sessions
             .Include(s => s.Patient)
-            .Include(s => s.Metrics)
-            .FirstOrDefaultAsync(s => s.Id == id);
+            .Where(s => s.Id == id)
+            .Select(s => new SessionDto
+            {
+                Id = s.Id,
+                PatientId = s.PatientId,
+                PatientName = s.Patient.FirstName + " " + s.Patient.LastName,
+                ScheduledTime = s.ScheduledTime,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Difficulty = s.Difficulty,
+                Status = s.Status
+            })
+            .FirstOrDefaultAsync();
 
         if (session == null)
-            return NotFound();
+            return NotFound(new { message = "جلسه یافت نشد" });
 
-        return session;
+        return Ok(session);
     }
 
-    // POST: api/sessions/start
-    [HttpPost("start")]
-    public async Task<ActionResult<Session>> StartSession([FromBody] StartSessionRequest request)
+    // POST: api/sessions
+    [HttpPost]
+    public async Task<ActionResult<SessionDto>> CreateSession(CreateSessionRequest request)
     {
+        // بررسی وجود بیمار
         var patient = await _context.Patients.FindAsync(request.PatientId);
         if (patient == null)
             return NotFound(new { message = "بیمار یافت نشد" });
@@ -52,71 +76,134 @@ public class SessionsController : ControllerBase
         var session = new Session
         {
             PatientId = request.PatientId,
-            StartTime = DateTime.UtcNow,
-            DifficultyLevel = request.DifficultyLevel,
-            GameType = request.GameType,
-            Status = "Active"
+            ScheduledTime = request.ScheduledTime,
+            Difficulty = request.Difficulty,
+            Status = SessionStatus.Scheduled
         };
 
         _context.Sessions.Add(session);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetSession), new { id = session.Id }, session);
+        var dto = new SessionDto
+        {
+            Id = session.Id,
+            PatientId = session.PatientId,
+            PatientName = patient.FirstName + " " + patient.LastName,
+            ScheduledTime = session.ScheduledTime,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            Difficulty = session.Difficulty,
+            Status = session.Status
+        };
+
+        return CreatedAtAction(nameof(GetSession), new { id = session.Id }, dto);
     }
 
-    // POST: api/sessions/5/metrics
-    [HttpPost("{id}/metrics")]
-    public async Task<ActionResult<SessionMetric>> AddMetric(int id, [FromBody] AddMetricRequest request)
+    // PUT: api/sessions/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateSession(int id, UpdateSessionRequest request)
     {
         var session = await _context.Sessions.FindAsync(id);
         if (session == null)
             return NotFound(new { message = "جلسه یافت نشد" });
 
-        if (session.Status != "Active")
+        if (request.ScheduledTime.HasValue)
+            session.ScheduledTime = request.ScheduledTime.Value;
+
+        if (request.Difficulty.HasValue)
+            session.Difficulty = request.Difficulty.Value;
+
+        if (request.Status.HasValue)
+            session.Status = request.Status.Value;
+
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // DELETE: api/sessions/{id}
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSession(int id)
+    {
+        var session = await _context.Sessions.FindAsync(id);
+        if (session == null)
+            return NotFound(new { message = "جلسه یافت نشد" });
+
+        _context.Sessions.Remove(session);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    // POST: api/sessions/{id}/start
+    [HttpPost("{id}/start")]
+    public async Task<IActionResult> StartSession(int id)
+    {
+        var session = await _context.Sessions.FindAsync(id);
+        if (session == null)
+            return NotFound(new { message = "جلسه یافت نشد" });
+
+        if (session.Status != SessionStatus.Scheduled)
+            return BadRequest(new { message = "جلسه قابل شروع نیست" });
+
+        session.StartTime = DateTime.UtcNow;
+        session.Status = SessionStatus.InProgress;
+
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
+    // POST: api/sessions/{id}/metrics
+    [HttpPost("{id}/metrics")]
+    public async Task<IActionResult> AddMetric(int id, AddMetricRequest request)
+    {
+        var session = await _context.Sessions.FindAsync(id);
+        if (session == null)
+            return NotFound(new { message = "جلسه یافت نشد" });
+
+        if (session.Status != SessionStatus.InProgress)
             return BadRequest(new { message = "جلسه فعال نیست" });
 
         var metric = new SessionMetric
         {
             SessionId = id,
+            DistanceTraveled = request.DistanceTraveled,
+            Duration = request.Duration,
+            AverageSpeed = request.AverageSpeed,
+            Score = request.Score,
             RangeOfMotion = request.RangeOfMotion,
             ReactionTime = request.ReactionTime,
             Accuracy = request.Accuracy,
             RepetitionCount = request.RepetitionCount,
-            Score = request.Score,
-            RecordedAt = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
         _context.SessionMetrics.Add(metric);
         await _context.SaveChangesAsync();
 
-        return Ok(metric);
+        return Ok();
     }
 
-    // POST: api/sessions/5/end
+    // POST: api/sessions/{id}/end
     [HttpPost("{id}/end")]
-    public async Task<ActionResult<Session>> EndSession(int id)
+    public async Task<IActionResult> EndSession(int id)
     {
-        var session = await _context.Sessions
-            .Include(s => s.Metrics)
-            .FirstOrDefaultAsync(s => s.Id == id);
-
+        var session = await _context.Sessions.FindAsync(id);
         if (session == null)
             return NotFound(new { message = "جلسه یافت نشد" });
 
-        if (session.Status != "Active")
-            return BadRequest(new { message = "جلسه قبلاً پایان یافته است" });
+        if (session.Status != SessionStatus.InProgress)
+            return BadRequest(new { message = "جلسه فعال نیست" });
 
         session.EndTime = DateTime.UtcNow;
-        session.Status = "Completed";
+        session.Status = SessionStatus.Completed;
 
         await _context.SaveChangesAsync();
-
-        return Ok(session);
+        return Ok();
     }
 
-    // GET: api/sessions/5/report
+    // GET: api/sessions/{id}/report
     [HttpGet("{id}/report")]
-    public async Task<ActionResult<SessionReport>> GetSessionReport(int id)
+    public async Task<ActionResult<SessionReport>> GetReport(int id)
     {
         var session = await _context.Sessions
             .Include(s => s.Patient)
@@ -126,61 +213,36 @@ public class SessionsController : ControllerBase
         if (session == null)
             return NotFound(new { message = "جلسه یافت نشد" });
 
+        var metrics = session.Metrics;
+
         var report = new SessionReport
         {
             SessionId = session.Id,
-            PatientName = $"{session.Patient.FirstName} {session.Patient.LastName}",
+            PatientName = session.Patient.FirstName + " " + session.Patient.LastName,
+            ScheduledTime = session.ScheduledTime,
             StartTime = session.StartTime,
             EndTime = session.EndTime,
-            TotalMetrics = session.Metrics.Count,
-            AverageAccuracy = session.Metrics.Any() ? session.Metrics.Average(m => m.Accuracy) : 0,
-            AverageReactionTime = session.Metrics.Any() ? session.Metrics.Average(m => m.ReactionTime) : 0,
-            TotalRepetitions = session.Metrics.Sum(m => m.RepetitionCount),
-            TotalScore = session.Metrics.Sum(m => m.Score)
+            Difficulty = session.Difficulty,
+            Status = session.Status,
+            TotalMetrics = metrics.Count,
+            TotalDistance = metrics.Sum(m => m.DistanceTraveled),
+            TotalDuration = metrics.Sum(m => m.Duration),
+            AverageSpeed = metrics.Any() ? metrics.Average(m => m.AverageSpeed) : 0,
+            TotalScore = metrics.Sum(m => m.Score),
+            AverageRangeOfMotion = metrics.Any(m => m.RangeOfMotion.HasValue)
+                ? metrics.Where(m => m.RangeOfMotion.HasValue).Average(m => m.RangeOfMotion.Value)
+                : null,
+            AverageReactionTime = metrics.Any(m => m.ReactionTime.HasValue)
+                ? metrics.Where(m => m.ReactionTime.HasValue).Average(m => m.ReactionTime.Value)
+                : null,
+            AverageAccuracy = metrics.Any(m => m.Accuracy.HasValue)
+                ? metrics.Where(m => m.Accuracy.HasValue).Average(m => m.Accuracy.Value)
+                : null,
+            TotalRepetitions = metrics.Any(m => m.RepetitionCount.HasValue)
+                ? metrics.Where(m => m.RepetitionCount.HasValue).Sum(m => m.RepetitionCount.Value)
+                : null
         };
 
         return Ok(report);
     }
-    [HttpPost]
-    public async Task<ActionResult<Session>> CreateSession(CreateSessionRequest request)
-    {   
-        var session = new Session
-        {
-            PatientId = request.PatientId,
-            ScheduledTime = request.ScheduledTime,
-            Status = "scheduled"
-        };
-    
-        _context.Sessions.Add(session);
-        await _context.SaveChangesAsync();
-    
-        return CreatedAtAction(nameof(GetSession), new { id = session.Id }, session);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateSession(int id, UpdateSessionRequest request)
-    {
-        var session = await _context.Sessions.FindAsync(id);
-        if (session == null) return NotFound();
-    
-        session.ScheduledTime = request.ScheduledTime;
-        session.Status = request.Status;
-    
-        await _context.SaveChangesAsync();
-        return NoContent();
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteSession(int id)
-    {
-        var session = await _context.Sessions.FindAsync(id);
-        if (session == null) return NotFound();
-    
-        _context.Sessions.Remove(session);
-        await _context.SaveChangesAsync();
-    
-        return NoContent();
-    }
-
-
 }
