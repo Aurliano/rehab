@@ -1,14 +1,26 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace RehabAPI.Models;
 
 public class Session
 {
     public int Id { get; set; }
+    
+    [Required]
     public int PatientId { get; set; }
-    public DateTime StartTime { get; set; } = DateTime.UtcNow;
+    
+    [Required]
+    public DateTime ScheduledTime { get; set; }
+    
+    public DateTime? StartTime { get; set; }
+    
     public DateTime? EndTime { get; set; }
-    public int? DifficultyLevel { get; set; }
-    public string? GameType { get; set; }
-    public string Status { get; set; } = "Active"; // "Active", "Completed", "Cancelled"
+    
+    [Required]
+    public GameDifficulty Difficulty { get; set; }
+    
+    [Required]
+    public SessionStatus Status { get; set; } = SessionStatus.Scheduled;
     
     // Navigation
     public Patient Patient { get; set; } = null!;
