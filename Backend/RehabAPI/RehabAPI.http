@@ -1,0 +1,6 @@
+@RehabAPI_HostAddress = http://localhost:5271
+
+GET {{RehabAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
