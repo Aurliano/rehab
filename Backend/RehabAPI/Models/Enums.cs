@@ -1,40 +1,42 @@
-namespace RehabAPI.Models;
-
-public enum Gender
+// C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\Enums.cs
+namespace RehabAPI.Models
 {
-    Male,
-    Female,
-    Other
-}
+    public enum Gender
+    {
+        Male,
+        Female,
+        Other
+    }
 
-public enum InjuryType
-{
-    Stroke,
-    SpinalCordInjury,
-    TraumaticBrainInjury,
-    Orthopedic,
-    Neurological,
-    Other
-}
+    public enum InjuryType
+    {
+        Stroke,
+        SpinalCordInjury,
+        TraumaticBrainInjury,
+        Orthopedic,
+        Neurological,
+        Other
+    }
 
-public enum AffectedSide
-{
-    Left,
-    Right,
-    Both
-}
+    public enum AffectedSide
+    {
+        Left,
+        Right,
+        Both
+    }
 
-public enum GameDifficulty
-{
-    Easy,
-    Normal,
-    Hard
-}
+    public enum GameDifficulty
+    {
+        Easy,
+        Normal,
+        Hard
+    }
 
-public enum SessionStatus
-{
-    Scheduled,
-    InProgress,
-    Completed,
-    Cancelled
+    public enum SessionStatus
+    {
+        Scheduled,
+        InProgress,
+        Completed,
+        Cancelled
+    }
 }
