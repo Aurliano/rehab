@@ -35,7 +35,7 @@ public class PatientsController : ControllerBase
             .Include(p => p.Sessions)
             .Select(p => new PatientWithNextSessionDto
             {
-                Id = p.Id,
+                PatientId = p.Id,  // ✅ خط 38 - تغییر از Id به PatientId
                 FirstName = p.FirstName,
                 LastName = p.LastName,
                 NationalCode = p.NationalCode,
@@ -51,7 +51,7 @@ public class PatientsController : ControllerBase
                     .OrderBy(s => s.ScheduledTime)
                     .Select(s => new SessionDto
                     {
-                        Id = s.Id,
+                        SessionId = s.Id,   // ✅ خط 54 - قبلاً Id بود
                         PatientId = s.PatientId,
                         PatientName = p.FirstName + " " + p.LastName,
                         ScheduledTime = s.ScheduledTime,

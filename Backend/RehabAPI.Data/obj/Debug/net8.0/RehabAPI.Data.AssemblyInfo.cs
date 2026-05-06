@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RehabAPI.Data")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+487de0d31e0b83da1ce4ba8bfebf81aedfbc94d5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1b82929fffead8d44b58382922fe7dc3a297d3b3")]
 [assembly: System.Reflection.AssemblyProductAttribute("RehabAPI.Data")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RehabAPI.Data")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

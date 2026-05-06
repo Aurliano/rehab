@@ -10,6 +10,17 @@ builder.Services.AddDbContext<RehabDbContext>(options =>
 // Add Controllers
 builder.Services.AddControllers();
 
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -25,7 +36,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Map Controllers
+app.UseCors("AllowFrontend");
+
 app.MapControllers();
 
 app.Run();

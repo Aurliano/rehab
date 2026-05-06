@@ -9,3 +9,4 @@ C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Debug\net8.0\RehabAPI.Mod
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Debug\net8.0\refint\RehabAPI.Models.dll
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Debug\net8.0\RehabAPI.Models.pdb
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Debug\net8.0\ref\RehabAPI.Models.dll
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Debug\net8.0\RehabAPI.Models.sourcelink.json

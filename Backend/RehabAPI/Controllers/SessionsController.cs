@@ -24,9 +24,10 @@ public class SessionsController : ControllerBase
             .Include(s => s.Patient)
             .Select(s => new SessionDto
             {
-                Id = s.Id,
+                SessionId = s.Id,  // ✅ تغییر از Id به SessionId
                 PatientId = s.PatientId,
                 PatientName = s.Patient.FirstName + " " + s.Patient.LastName,
+                GameType = "",  // ✅ اگر در مدل Session فیلد GameType نداری، خالی بذار
                 ScheduledTime = s.ScheduledTime,
                 StartTime = s.StartTime,
                 EndTime = s.EndTime,
@@ -44,34 +45,34 @@ public class SessionsController : ControllerBase
     {
         var session = await _context.Sessions
             .Include(s => s.Patient)
-            .Where(s => s.Id == id)
-            .Select(s => new SessionDto
-            {
-                Id = s.Id,
-                PatientId = s.PatientId,
-                PatientName = s.Patient.FirstName + " " + s.Patient.LastName,
-                ScheduledTime = s.ScheduledTime,
-                StartTime = s.StartTime,
-                EndTime = s.EndTime,
-                Difficulty = s.Difficulty,
-                Status = s.Status
-            })
-            .FirstOrDefaultAsync();
-
+            .FirstOrDefaultAsync(s => s.Id == id);
+        
         if (session == null)
-            return NotFound(new { message = "جلسه یافت نشد" });
-
-        return Ok(session);
+            return NotFound($"Session {id} not found");
+        
+        var dto = new SessionDto
+        {
+            SessionId = session.Id,  // ✅ تغییر از
+            PatientId = session.PatientId,
+            PatientName = $"{session.Patient.FirstName} {session.Patient.LastName}", // ✅ اصلاح متغیر patient
+            GameType = "",
+            ScheduledTime = session.ScheduledTime,
+            StartTime = session.StartTime,
+            EndTime = session.EndTime,
+            Difficulty = session.Difficulty,
+            Status = session.Status
+        };
+    
+        return Ok(dto);
     }
 
     // POST: api/sessions
     [HttpPost]
     public async Task<ActionResult<SessionDto>> CreateSession(CreateSessionRequest request)
     {
-        // بررسی وجود بیمار
         var patient = await _context.Patients.FindAsync(request.PatientId);
         if (patient == null)
-            return NotFound(new { message = "بیمار یافت نشد" });
+            return NotFound($"Patient with ID {request.PatientId} not found");
 
         var session = new Session
         {
@@ -84,19 +85,16 @@ public class SessionsController : ControllerBase
         _context.Sessions.Add(session);
         await _context.SaveChangesAsync();
 
-        var dto = new SessionDto
+        return CreatedAtAction(nameof(GetSession), new { id = session.Id }, new SessionDto
         {
-            Id = session.Id,
+            SessionId = session.Id, // ✅ اصلاح
             PatientId = session.PatientId,
-            PatientName = patient.FirstName + " " + patient.LastName,
+            PatientName = $"{patient.FirstName} {patient.LastName}",
+            GameType = "",
             ScheduledTime = session.ScheduledTime,
-            StartTime = session.StartTime,
-            EndTime = session.EndTime,
             Difficulty = session.Difficulty,
             Status = session.Status
-        };
-
-        return CreatedAtAction(nameof(GetSession), new { id = session.Id }, dto);
+        });
     }
 
     // PUT: api/sessions/{id}
@@ -107,49 +105,20 @@ public class SessionsController : ControllerBase
         if (session == null)
             return NotFound(new { message = "جلسه یافت نشد" });
 
-        if (request.ScheduledTime.HasValue)
-            session.ScheduledTime = request.ScheduledTime.Value;
-
-        if (request.Difficulty.HasValue)
-            session.Difficulty = request.Difficulty.Value;
+        // ✅ چون ScheduledTime و Difficulty را از DTO حذف کردیم،
+        // دیگر این دو خط نباید وجود داشته باشند
 
         if (request.Status.HasValue)
             session.Status = request.Status.Value;
 
+        if (request.StartTime.HasValue)
+            session.StartTime = request.StartTime;
+
+        if (request.EndTime.HasValue)
+            session.EndTime = request.EndTime;
+
         await _context.SaveChangesAsync();
         return NoContent();
-    }
-
-    // DELETE: api/sessions/{id}
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteSession(int id)
-    {
-        var session = await _context.Sessions.FindAsync(id);
-        if (session == null)
-            return NotFound(new { message = "جلسه یافت نشد" });
-
-        _context.Sessions.Remove(session);
-        await _context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    // POST: api/sessions/{id}/start
-    [HttpPost("{id}/start")]
-    public async Task<IActionResult> StartSession(int id)
-    {
-        var session = await _context.Sessions.FindAsync(id);
-        if (session == null)
-            return NotFound(new { message = "جلسه یافت نشد" });
-
-        if (session.Status != SessionStatus.Scheduled)
-            return BadRequest(new { message = "جلسه قابل شروع نیست" });
-
-        session.StartTime = DateTime.UtcNow;
-        session.Status = SessionStatus.InProgress;
-
-        await _context.SaveChangesAsync();
-        return Ok();
     }
 
     // POST: api/sessions/{id}/metrics
@@ -169,35 +138,14 @@ public class SessionsController : ControllerBase
             DistanceTraveled = request.DistanceTraveled,
             Duration = request.Duration,
             AverageSpeed = request.AverageSpeed,
-            Score = request.Score,
-            RangeOfMotion = request.RangeOfMotion,
-            ReactionTime = request.ReactionTime,
-            Accuracy = request.Accuracy,
-            RepetitionCount = request.RepetitionCount,
             Timestamp = DateTime.UtcNow
+
+            // ✅ حذف Score, RangeOfMotion, ReactionTime, Accuracy, RepetitionCount
         };
 
         _context.SessionMetrics.Add(metric);
         await _context.SaveChangesAsync();
 
-        return Ok();
-    }
-
-    // POST: api/sessions/{id}/end
-    [HttpPost("{id}/end")]
-    public async Task<IActionResult> EndSession(int id)
-    {
-        var session = await _context.Sessions.FindAsync(id);
-        if (session == null)
-            return NotFound(new { message = "جلسه یافت نشد" });
-
-        if (session.Status != SessionStatus.InProgress)
-            return BadRequest(new { message = "جلسه فعال نیست" });
-
-        session.EndTime = DateTime.UtcNow;
-        session.Status = SessionStatus.Completed;
-
-        await _context.SaveChangesAsync();
         return Ok();
     }
 
@@ -222,25 +170,15 @@ public class SessionsController : ControllerBase
             ScheduledTime = session.ScheduledTime,
             StartTime = session.StartTime,
             EndTime = session.EndTime,
-            Difficulty = session.Difficulty,
-            Status = session.Status,
             TotalMetrics = metrics.Count,
             TotalDistance = metrics.Sum(m => m.DistanceTraveled),
             TotalDuration = metrics.Sum(m => m.Duration),
-            AverageSpeed = metrics.Any() ? metrics.Average(m => m.AverageSpeed) : 0,
-            TotalScore = metrics.Sum(m => m.Score),
-            AverageRangeOfMotion = metrics.Any(m => m.RangeOfMotion.HasValue)
-                ? metrics.Where(m => m.RangeOfMotion.HasValue).Average(m => m.RangeOfMotion.Value)
-                : null,
-            AverageReactionTime = metrics.Any(m => m.ReactionTime.HasValue)
-                ? metrics.Where(m => m.ReactionTime.HasValue).Average(m => m.ReactionTime.Value)
-                : null,
-            AverageAccuracy = metrics.Any(m => m.Accuracy.HasValue)
-                ? metrics.Where(m => m.Accuracy.HasValue).Average(m => m.Accuracy.Value)
-                : null,
-            TotalRepetitions = metrics.Any(m => m.RepetitionCount.HasValue)
-                ? metrics.Where(m => m.RepetitionCount.HasValue).Sum(m => m.RepetitionCount.Value)
-                : null
+            AverageSpeed = metrics.Any() ? metrics.Average(m => m.AverageSpeed) : 0
+
+            // ✅ حذف Difficulty
+            // ✅ حذف Status
+            // ✅ حذف TotalScore
+            // ✅ حذف Accuracy / ROM / ReactionTime / Repetitions
         };
 
         return Ok(report);

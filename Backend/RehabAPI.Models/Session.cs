@@ -17,7 +17,7 @@ public class Session
     public DateTime? EndTime { get; set; }
 
     [Required]
-    public GameDifficulty Difficulty { get; set; }
+    public DifficultyLevel Difficulty { get; set; }
 
     [Required]
     public SessionStatus Status { get; set; } = SessionStatus.Scheduled;

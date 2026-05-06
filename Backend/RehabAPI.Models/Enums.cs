@@ -1,42 +1,41 @@
-// C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\Enums.cs
-namespace RehabAPI.Models
+namespace RehabAPI.Models;
+
+public enum Gender
 {
-    public enum Gender
-    {
-        Male,
-        Female,
-        Other
-    }
+    Male,
+    Female,
+    Other
+}
 
-    public enum InjuryType
-    {
-        Stroke,
-        SpinalCordInjury,
-        TraumaticBrainInjury,
-        Orthopedic,
-        Neurological,
-        Other
-    }
+public enum InjuryType
+{
+    Stroke,
+    SpinalCordInjury,
+    TraumaticBrainInjury,
+    Orthopedic,
+    Neurological,
+    Other
+}
 
-    public enum AffectedSide
-    {
-        Left,
-        Right,
-        Both
-    }
+public enum AffectedSide
+{
+    Left,
+    Right,
+    Both
+}
 
-    public enum GameDifficulty
-    {
-        Easy,
-        Normal,
-        Hard
-    }
+// ✅ تغییر نام از GameDifficulty به DifficultyLevel
+public enum DifficultyLevel
+{
+    Easy,
+    Normal,
+    Hard
+}
 
-    public enum SessionStatus
-    {
-        Scheduled,
-        InProgress,
-        Completed,
-        Cancelled
-    }
+public enum SessionStatus
+{
+    Scheduled,
+    InProgress,
+    Completed,
+    Cancelled
 }

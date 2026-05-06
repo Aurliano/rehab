@@ -13,3 +13,4 @@ C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Data\obj\Debug\net8.0\RehabAPI.Data.
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Data\obj\Debug\net8.0\refint\RehabAPI.Data.dll
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Data\obj\Debug\net8.0\RehabAPI.Data.pdb
 C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Data\obj\Debug\net8.0\ref\RehabAPI.Data.dll
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Data\obj\Debug\net8.0\RehabAPI.Data.sourcelink.json
