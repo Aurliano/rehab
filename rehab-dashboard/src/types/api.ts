@@ -35,20 +35,22 @@ export interface SessionMetric {
   score: number;
   recordedAt: string;
 }
-// Patient Entity
+
 export interface Patient {
   id: number;
   firstName: string;
   lastName: string;
-  nationalCode: string; // ✅ تغییر از nationalId
-  age: number; // ✅ تغییر از dateOfBirth
+  nationalCode: string;
+  dateOfBirth: string; // ✅ تغییر از age به dateOfBirth (ISO date string)
   gender: string; // "Male" | "Female"
-  phone?: string; // ✅ تغییر از phoneNumber
-  injuryType?: string; // ✅ جدید
-  affectedSide?: string; // ✅ جدید - "Left" | "Right" | "Both"
-  notes?: string; // ✅ جدید
-  createdAt: string; // ISO date string
+  phoneNumber?: string; // ✅ تغییر از phone به phoneNumber
+  injuryType?: string;
+  affectedSide?: string; // "Left" | "Right" | "Both"
+  injuryDate: string; // ✅ اضافه شد (ISO date string)
+  // notes حذف شد - در بک‌اند وجود ندارد
+  createdAt: string;
 }
+
 
 // Session Entity
 export interface Session {

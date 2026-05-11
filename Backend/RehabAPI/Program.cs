@@ -8,7 +8,11 @@ builder.Services.AddDbContext<RehabDbContext>(options =>
     options.UseSqlite("Data Source=rehab.db"));
 
 // Add Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 // Add CORS
 builder.Services.AddCors(options =>

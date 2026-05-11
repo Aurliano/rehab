@@ -25,47 +25,49 @@ public class PatientsController : ControllerBase
             .ToListAsync();
     }
 
-    // GET: api/patients/with-next-session
-    [HttpGet("with-next-session")]
-    public async Task<ActionResult<IEnumerable<PatientWithNextSessionDto>>> GetPatientsWithNextSession()
+// GET: api/patients/with-next-session
+[HttpGet("with-next-session")]
+public async Task<ActionResult<IEnumerable<PatientWithNextSessionDto>>> GetPatientsWithNextSession()
+{
+    var now = DateTime.UtcNow;
+
+    // مرحله 1: بارگذاری بیماران با جلسات آینده‌شان
+    var patients = await _context.Patients
+        .Include(p => p.Sessions.Where(s => s.Status == SessionStatus.Scheduled && s.ScheduledTime > now))
+        .ToListAsync();
+
+    // مرحله 2: پردازش در حافظه (in-memory)
+    var result = patients.Select(p => new PatientWithNextSessionDto
     {
-        var now = DateTime.UtcNow;
+        PatientId = p.Id,
+        FirstName = p.FirstName,
+        LastName = p.LastName,
+        NationalCode = p.NationalCode,
+        DateOfBirth = p.DateOfBirth,
+        Gender = p.Gender,
+        PhoneNumber = p.PhoneNumber,
+        InjuryType = p.InjuryType,
+        AffectedSide = p.AffectedSide,
+        InjuryDate = p.InjuryDate,
 
-        var patients = await _context.Patients
-            .Include(p => p.Sessions)
-            .Select(p => new PatientWithNextSessionDto
+        NextSession = p.Sessions
+            .OrderBy(s => s.ScheduledTime)
+            .Select(s => new SessionDto
             {
-                PatientId = p.Id,  // ✅ خط 38 - تغییر از Id به PatientId
-                FirstName = p.FirstName,
-                LastName = p.LastName,
-                NationalCode = p.NationalCode,
-                DateOfBirth = p.DateOfBirth,
-                Gender = p.Gender,
-                PhoneNumber = p.PhoneNumber,
-                InjuryType = p.InjuryType,
-                AffectedSide = p.AffectedSide,
-                InjuryDate = p.InjuryDate,
-
-                NextSession = p.Sessions
-                    .Where(s => s.Status == SessionStatus.Scheduled && s.ScheduledTime > now)
-                    .OrderBy(s => s.ScheduledTime)
-                    .Select(s => new SessionDto
-                    {
-                        SessionId = s.Id,   // ✅ خط 54 - قبلاً Id بود
-                        PatientId = s.PatientId,
-                        PatientName = p.FirstName + " " + p.LastName,
-                        ScheduledTime = s.ScheduledTime,
-                        StartTime = s.StartTime,
-                        EndTime = s.EndTime,
-                        Difficulty = s.Difficulty,
-                        Status = s.Status
-                    })
-                    .FirstOrDefault()
+                SessionId = s.Id,
+                PatientId = s.PatientId,
+                PatientName = $"{p.FirstName} {p.LastName}",
+                ScheduledTime = s.ScheduledTime,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Difficulty = s.Difficulty,
+                Status = s.Status
             })
-            .ToListAsync();
+            .FirstOrDefault()
+    }).ToList();
 
-        return Ok(patients);
-    }
+    return Ok(result);
+}
 
     // GET: api/patients/{id}
     [HttpGet("{id}")]

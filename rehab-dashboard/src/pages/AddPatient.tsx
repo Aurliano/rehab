@@ -1,5 +1,4 @@
-import { useState} from "react";
-import type {  FormEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { patientsApi } from "../api/patients";
 
@@ -7,29 +6,92 @@ interface PatientFormData {
   firstName: string;
   lastName: string;
   nationalCode: string;
-  age: string;
+  dateOfBirth: string;
   gender: string;
-  phone: string;
+  phoneNumber: string;
   injuryType: string;
   affectedSide: string;
-  notes: string;
+  injuryDate: string;
+}
+
+// تبدیل تاریخ شمسی به میلادی
+function jalaliToGregorian(jy: number, jm: number, jd: number): string {
+  const g_days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+  let gy = jy <= 979 ? 621 : 1600;
+  jy -= jy <= 979 ? 0 : 979;
+
+  let days =
+    365 * jy +
+    Math.floor(jy / 33) * 8 +
+    Math.floor(((jy % 33) + 3) / 4) +
+    78 +
+    jd +
+    (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
+
+  gy += 400 * Math.floor(days / 146097);
+  days %= 146097;
+
+  let leap = true;
+  if (days >= 36525) {
+    days--;
+    gy += 100 * Math.floor(days / 36524);
+    days %= 36524;
+    if (days >= 365) days++;
+    else leap = false;
+  }
+
+  gy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+
+  if (days >= 366) {
+    leap = false;
+    days--;
+    gy += Math.floor(days / 365);
+    days %= 365;
+  }
+
+  let gm = 0;
+  for (let i = 0; g_days_in_month[i] + (i === 1 && leap ? 1 : 0) <= days; i++) {
+    gm++;
+    days -= g_days_in_month[i] + (i === 1 && leap ? 1 : 0);
+  }
+
+  const gd = days + 1;
+  gm += 1;
+
+  return `${gy}-${String(gm).padStart(2, "0")}-${String(gd).padStart(2, "0")}`;
+}
+
+function SuccessAlert({ message }: { message: string }) {
+  return (
+    <div className="fixed top-6 right-6 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-md border border-green-400/50 animate-fade-in z-50 flex items-center gap-3">
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+      <span className="font-semibold">{message}</span>
+    </div>
+  );
 }
 
 export default function AddPatient() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [birthDateJalali, setBirthDateJalali] = useState({ year: "", month: "", day: "" });
+  const [injuryDateJalali, setInjuryDateJalali] = useState({ year: "", month: "", day: "" });
+
   const [formData, setFormData] = useState<PatientFormData>({
     firstName: "",
     lastName: "",
     nationalCode: "",
-    age: "",
+    dateOfBirth: "",
     gender: "",
-    phone: "",
+    phoneNumber: "",
     injuryType: "",
     affectedSide: "",
-    notes: "",
+    injuryDate: "",
   });
 
   const [errors, setErrors] = useState<Partial<PatientFormData>>({});
@@ -37,269 +99,452 @@ export default function AddPatient() {
   const validateForm = (): boolean => {
     const newErrors: Partial<PatientFormData> = {};
 
-    // نام
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "نام الزامی است";
-    }
+    if (!formData.firstName.trim()) newErrors.firstName = "نام الزامی است";
+    if (!formData.lastName.trim()) newErrors.lastName = "نام خانوادگی الزامی است";
 
-    // نام خانوادگی
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "نام خانوادگی الزامی است";
-    }
-
-    // کد ملی - باید ۱۰ رقم باشد
     if (!formData.nationalCode.trim()) {
       newErrors.nationalCode = "کد ملی الزامی است";
     } else if (!/^\d{10}$/.test(formData.nationalCode)) {
       newErrors.nationalCode = "کد ملی باید ۱۰ رقم باشد";
     }
 
-    // سن
-    if (!formData.age.trim()) {
-      newErrors.age = "سن الزامی است";
-    } else if (isNaN(Number(formData.age)) || Number(formData.age) <= 0) {
-      newErrors.age = "سن باید عدد مثبت باشد";
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = "تاریخ تولد الزامی است";
     }
 
-    // جنسیت
     if (!formData.gender) {
       newErrors.gender = "جنسیت الزامی است";
+    }
+
+    if (!formData.injuryType) {
+      newErrors.injuryType = "نوع آسیب الزامی است";
+    }
+
+    if (!formData.affectedSide) {
+      newErrors.affectedSide = "سمت آسیب الزامی است";
+    }
+
+    if (!formData.injuryDate) {
+      newErrors.injuryDate = "تاریخ آسیب الزامی است";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    setIsSubmitting(true);
 
     try {
-      await patientsApi.create({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        nationalCode: formData.nationalCode.trim(),
-        age: Number(formData.age),
-        gender: formData.gender,
-        phone: formData.phone.trim() || undefined,
-        injuryType: formData.injuryType.trim() || undefined,
-        affectedSide: formData.affectedSide || undefined,
-        notes: formData.notes.trim() || undefined,
-      });
+      await patientsApi.create(formData);
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate("/patients");
+      }, 1500);      
+    } 
+    catch (error) {
+        console.error(error);
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
 
-      // بازگشت به صفحه انتخاب بیمار
-      navigate("/patients");
-    } catch (err) {
-      setError("خطا در ثبت بیمار. لطفاً دوباره تلاش کنید.");
-      console.error("Error creating patient:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const updateBirthDate = (
+      field: "year" | "month" | "day",
+      value: string
+    ) => {
+      if (field === "month") {
+        const month = Number(value);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // پاک کردن خطای فیلد هنگام تغییر
-    if (errors[name as keyof PatientFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
+        if (month < 1 || month > 12) {
+          return;
+        }
+      }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center gap-2"
-          >
-            ← بازگشت
-          </button>
-          <h1 className="text-3xl font-bold text-gray-800">افزودن بیمار جدید</h1>
-        </div>
+      if (field === "day") {
+        const day = Number(value);
 
-        {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
-            {error}
-          </div>
+        if (day < 1 || day > 31) {
+          return;
+        }
+      }
+
+      const updated = {
+        ...birthDateJalali,
+        [field]: value,
+      };
+
+      setBirthDateJalali(updated);
+
+      if (
+        updated.year.length === 4 &&
+        updated.month &&
+        updated.day
+      ) {
+        const gregorian = jalaliToGregorian(
+          Number(updated.year),
+          Number(updated.month),
+          Number(updated.day)
+        );
+
+        setFormData({
+          ...formData,
+          dateOfBirth: gregorian,
+        });
+      }
+    };
+
+    const updateInjuryDate = (
+      field: "year" | "month" | "day",
+      value: string
+    ) => {
+      if (field === "month") {
+        const month = Number(value);
+
+        if (month < 1 || month > 12) {
+          return;
+        }
+      }
+
+      if (field === "day") {
+        const day = Number(value);
+
+        if (day < 1 || day > 31) {
+          return;
+        }
+      }
+
+      const updated = {
+        ...injuryDateJalali,
+        [field]: value,
+      };
+
+      setInjuryDateJalali(updated);
+
+      if (
+        updated.year.length === 4 &&
+        updated.month &&
+        updated.day
+      ) {
+        const gregorian = jalaliToGregorian(
+          Number(updated.year),
+          Number(updated.month),
+          Number(updated.day)
+        );
+
+        setFormData({
+          ...formData,
+          injuryDate: gregorian,
+        });
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-[#061622] text-white p-6">
+        {showSuccess && (
+          <SuccessAlert message="بیمار با موفقیت ثبت شد" />
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl shadow-lg p-8 space-y-6"
-        >
-          {/* نام و نام خانوادگی */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-2 font-medium">نام *</label>
-              <input
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              {errors.firstName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.firstName}
-                </p>
-              )}
-            </div>
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-10 text-center">
+            <h1 className="text-4xl font-bold text-cyan-300 mb-3">
+              افزودن بیمار جدید
+            </h1>
 
-            <div>
-              <label className="block mb-2 font-medium">نام خانوادگی *</label>
-              <input
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              {errors.lastName && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.lastName}
-                </p>
-              )}
-            </div>
+            <p className="text-slate-400">
+              اطلاعات بیمار را وارد کنید
+            </p>
           </div>
 
-          {/* کد ملی و سن */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-2 font-medium">کد ملی *</label>
-              <input
-                name="nationalCode"
-                value={formData.nationalCode}
-                onChange={handleChange}
-                maxLength={10}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              {errors.nationalCode && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.nationalCode}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block mb-2 font-medium">سن *</label>
-              <input
-                name="age"
-                type="number"
-                value={formData.age}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              {errors.age && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.age}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* جنسیت و سمت آسیب */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-2 font-medium">جنسیت *</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              >
-                <option value="">انتخاب کنید</option>
-                <option value="Male">مرد</option>
-                <option value="Female">زن</option>
-              </select>
-              {errors.gender && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.gender}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block mb-2 font-medium">
-                سمت آسیب‌دیده
-              </label>
-              <select
-                name="affectedSide"
-                value={formData.affectedSide}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              >
-                <option value="">انتخاب کنید</option>
-                <option value="Left">چپ</option>
-                <option value="Right">راست</option>
-                <option value="Both">هر دو</option>
-              </select>
-            </div>
-          </div>
-
-          {/* تلفن و نوع آسیب */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-2 font-medium">تلفن</label>
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-2 font-medium">نوع آسیب</label>
-              <input
-                name="injuryType"
-                value={formData.injuryType}
-                onChange={handleChange}
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* توضیحات */}
-          <div>
-            <label className="block mb-2 font-medium">یادداشت</label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={3}
-              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-          </div>
-
-          {/* دکمه‌ها */}
-          <div className="flex justify-end gap-4 pt-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+          <div className="bg-white/5 backdrop-blur-xl border border-cyan-400/20 rounded-3xl p-8 shadow-2xl">
+            <form
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-5"
             >
-              انصراف
-            </button>
+              {/* نام */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="نام"
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      firstName: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.firstName ? "border-red-500" : ""
+                  }`}
+                />
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? "در حال ثبت..." : "ثبت بیمار"}
-            </button>
+                {errors.firstName && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.firstName}
+                  </p>
+                )}
+              </div>
+
+              {/* نام خانوادگی */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="نام خانوادگی"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lastName: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.lastName ? "border-red-500" : ""
+                  }`}
+                />
+
+                {errors.lastName && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.lastName}
+                  </p>
+                )}
+              </div>
+
+              {/* کد ملی */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="کد ملی"
+                  value={formData.nationalCode}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      nationalCode: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.nationalCode ? "border-red-500" : ""
+                  }`}
+                />
+
+                {errors.nationalCode && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.nationalCode}
+                  </p>
+                )}
+              </div>
+
+              {/* جنسیت */}
+              <div>
+                <select
+                  value={formData.gender}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      gender: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.gender ? "border-red-500" : ""
+                  }`}
+                >
+                  <option value="">انتخاب جنسیت</option>
+                  <option value="Male">مرد</option>
+                  <option value="Female">زن</option>
+                </select>
+
+                {errors.gender && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.gender}
+                  </p>
+                )}
+              </div>
+
+              {/* تاریخ تولد */}
+              <div>
+                <label className="text-slate-300 mb-3 block">
+                  تاریخ تولد
+                </label>
+
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    min="1300"
+                    max="1500"
+                    placeholder="سال"
+                    value={birthDateJalali.year}
+                    onChange={(e) =>
+                      updateBirthDate("year", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    placeholder="ماه"
+                    value={birthDateJalali.month}
+                    onChange={(e) =>
+                      updateBirthDate("month", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="روز"
+                    value={birthDateJalali.day}
+                    onChange={(e) =>
+                      updateBirthDate("day", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+                </div>
+
+                {errors.dateOfBirth && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.dateOfBirth}
+                  </p>
+                )}
+              </div>
+
+              {/* تلفن */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="شماره تماس"
+                  value={formData.phoneNumber}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      phoneNumber: e.target.value,
+                    })
+                  }
+                  className="input-style"
+                />
+              </div>
+
+              {/* نوع آسیب */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="نوع آسیب"
+                  value={formData.injuryType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      injuryType: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.injuryType ? "border-red-500" : ""
+                  }`}
+                />
+
+                {errors.injuryType && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.injuryType}
+                  </p>
+                )}
+              </div>
+
+              {/* سمت آسیب */}
+              <div>
+                <select
+                  value={formData.affectedSide}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      affectedSide: e.target.value,
+                    })
+                  }
+                  className={`input-style ${
+                    errors.affectedSide ? "border-red-500" : ""
+                  }`}
+                >
+                  <option value="">سمت آسیب</option>
+                  <option value="Left">چپ</option>
+                  <option value="Right">راست</option>
+                  <option value="Both">هر دو</option>
+                </select>
+
+                {errors.affectedSide && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.affectedSide}
+                  </p>
+                )}
+              </div>
+
+              {/* تاریخ آسیب */}
+              <div>
+                <label className="text-slate-300 mb-3 block">
+                  تاریخ آسیب
+                </label>
+
+                <div className="flex gap-3">
+                  <input
+                    type="number"
+                    min="1300"
+                    max="1500"
+                    placeholder="سال"
+                    value={injuryDateJalali.year}
+                    onChange={(e) =>
+                      updateInjuryDate("year", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="12"
+                    placeholder="ماه"
+                    value={injuryDateJalali.month}
+                    onChange={(e) =>
+                      updateInjuryDate("month", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    placeholder="روز"
+                    value={injuryDateJalali.day}
+                    onChange={(e) =>
+                      updateInjuryDate("day", e.target.value)
+                    }
+                    className="input-style text-center"
+                  />
+                </div>
+
+                {errors.injuryDate && (
+                  <p className="text-red-400 text-sm mt-2">
+                    {errors.injuryDate}
+                  </p>
+                )}
+              </div>
+
+              {/* دکمه ثبت */}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="md:col-span-2 mx-auto w-full md:w-72 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 text-[#021728] font-bold text-lg shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50"
+              >
+                {isSubmitting ? "در حال ثبت..." : "ثبت بیمار"}
+              </button>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
-  );
+    );
 }
