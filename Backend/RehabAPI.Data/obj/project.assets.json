@@ -1054,11 +1054,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\AsA\\Desktop\\Rehab\\backend\\RehabAPI.Data\\RehabAPI.Data.csproj",
+      "projectUniqueName": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Data\\RehabAPI.Data.csproj",
       "projectName": "RehabAPI.Data",
-      "projectPath": "C:\\Users\\AsA\\Desktop\\Rehab\\backend\\RehabAPI.Data\\RehabAPI.Data.csproj",
+      "projectPath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Data\\RehabAPI.Data.csproj",
       "packagesPath": "C:\\Users\\AsA\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\AsA\\Desktop\\Rehab\\backend\\RehabAPI.Data\\obj\\",
+      "outputPath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Data\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\AsA\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -1075,8 +1075,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "C:\\Users\\AsA\\Desktop\\Rehab\\backend\\RehabAPI.Models\\RehabAPI.Models.csproj": {
-              "projectPath": "C:\\Users\\AsA\\Desktop\\Rehab\\backend\\RehabAPI.Models\\RehabAPI.Models.csproj"
+            "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj": {
+              "projectPath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj"
             }
           }
         }
