@@ -1,0 +1,32 @@
+# Node
+**/node_modules/
+
+# React/Vite
+**/dist/
+**/build/
+
+# Electron
+**/release/
+**/win-unpacked/
+*.asar
+*.blockmap
+
+# Generated installers
+*.exe
+
+# Unity
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/UserSettings/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

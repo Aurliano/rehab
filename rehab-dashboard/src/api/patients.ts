@@ -33,5 +33,14 @@ export const patientsApi = {
     const response = await apiClient.post<Patient>("/patients", data);
     return response.data;
   },
+  
+  update: async (id: number, data: Partial<Patient>) => {
+    await apiClient.put(`/patients/${id}`, data);
+  },
+
+    remove: async (id: number) => {
+    const response = await apiClient.delete(`/patients/${id}`);
+    return response.data;
+  },
 };
 

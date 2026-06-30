@@ -1,0 +1,12 @@
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\bin\Release\net8.0\RehabAPI.Models.deps.json
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\bin\Release\net8.0\RehabAPI.Models.dll
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\bin\Release\net8.0\RehabAPI.Models.pdb
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.AssemblyInfoInputs.cache
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.AssemblyInfo.cs
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.csproj.CoreCompileInputs.cache
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.sourcelink.json
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.dll
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\refint\RehabAPI.Models.dll
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\RehabAPI.Models.pdb
+C:\Users\AsA\Desktop\Rehab\Backend\RehabAPI.Models\obj\Release\net8.0\ref\RehabAPI.Models.dll

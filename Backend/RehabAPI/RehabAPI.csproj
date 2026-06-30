@@ -21,4 +21,17 @@
     <ProjectReference Include="..\RehabAPI.Models\RehabAPI.Models.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="rehab.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <Target Name="CopyDatabaseToPublish" AfterTargets="Publish">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\rehab.db"
+          DestinationFolder="$(PublishDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

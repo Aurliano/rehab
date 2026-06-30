@@ -1,7 +1,8 @@
 {
   "version": 3,
   "targets": {
-    "net8.0": {}
+    "net8.0": {},
+    "net8.0/win-x64": {}
   },
   "libraries": {},
   "projectFileDependencyGroups": {
@@ -13,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\AsA\\desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj",
+      "projectUniqueName": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj",
       "projectName": "RehabAPI.Models",
-      "projectPath": "C:\\Users\\AsA\\desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj",
+      "projectPath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj",
       "packagesPath": "C:\\Users\\AsA\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\AsA\\desktop\\Rehab\\Backend\\RehabAPI.Models\\obj\\",
+      "outputPath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\AsA\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -61,12 +62,31 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
+            "version": "[8.0.8, 8.0.8]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Runtime.win-x64",
+            "version": "[8.0.8, 8.0.8]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+            "version": "[8.0.8, 8.0.8]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.401/PortableRuntimeIdentifierGraph.json"
+      }
+    },
+    "runtimes": {
+      "win-x64": {
+        "#import": []
       }
     }
   }

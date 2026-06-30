@@ -65,6 +65,17 @@ export interface Session {
 }
 
 // Patient with next session info
-export interface PatientWithNextSession extends Patient {
+export interface PatientWithNextSession {
+  patientId: number;
+  firstName: string;
+  lastName: string;
+  nationalCode: string;
+  dateOfBirth: string;
+  gender: string;
+  phoneNumber?: string;
+  injuryType?: string;
+  affectedSide?: string;
+  injuryDate: string;
   nextSession?: Session;
 }
+

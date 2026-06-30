@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base URL از appsettings.json - پورت رو بر اساس پروژه خودت تنظیم کن
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5271/api', 
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5271/api',
   headers: {
     'Content-Type': 'application/json',
   },

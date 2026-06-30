@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import { patientsApi } from "../api/patients";
 
 interface PatientFormData {
@@ -7,12 +8,20 @@ interface PatientFormData {
   lastName: string;
   nationalCode: string;
   dateOfBirth: string;
-  gender: string;
+  gender: "Male" | "Female" | "Other" | "";
   phoneNumber: string;
-  injuryType: string;
-  affectedSide: string;
+  injuryType:
+    | "Stroke"
+    | "SpinalCordInjury"
+    | "TraumaticBrainInjury"
+    | "Orthopedic"
+    | "Neurological"
+    | "Other"
+    | "";
+  affectedSide: "Left" | "Right" | "Both" | "";
   injuryDate: string;
 }
+type FormErrors = Partial<Record<keyof PatientFormData, string>>;
 
 // تبدیل تاریخ شمسی به میلادی
 function jalaliToGregorian(jy: number, jm: number, jd: number): string {
@@ -78,6 +87,7 @@ export default function AddPatient() {
   const navigate = useNavigate();
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const [birthDateJalali, setBirthDateJalali] = useState({ year: "", month: "", day: "" });
   const [injuryDateJalali, setInjuryDateJalali] = useState({ year: "", month: "", day: "" });
@@ -94,13 +104,16 @@ export default function AddPatient() {
     injuryDate: "",
   });
 
-  const [errors, setErrors] = useState<Partial<PatientFormData>>({});
+const [errors, setErrors] = useState<FormErrors>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<PatientFormData> = {};
+const newErrors: FormErrors = {};
 
     if (!formData.firstName.trim()) newErrors.firstName = "نام الزامی است";
+    else if (formData.firstName.length > 50) newErrors.firstName = "نام نباید بیشتر از 50 کاراکتر باشد";
+
     if (!formData.lastName.trim()) newErrors.lastName = "نام خانوادگی الزامی است";
+    else if (formData.lastName.length > 50) newErrors.lastName = "نام خانوادگی نباید بیشتر از 50 کاراکتر باشد";
 
     if (!formData.nationalCode.trim()) {
       newErrors.nationalCode = "کد ملی الزامی است";
@@ -108,25 +121,18 @@ export default function AddPatient() {
       newErrors.nationalCode = "کد ملی باید ۱۰ رقم باشد";
     }
 
-    if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = "تاریخ تولد الزامی است";
+    if (!formData.dateOfBirth) newErrors.dateOfBirth = "تاریخ تولد الزامی است";
+    if (!formData.gender) newErrors.gender = "جنسیت الزامی است";
+
+    if (!formData.phoneNumber.trim()) {
+      // شماره تماس اختیاری است، اگر می‌خوای اجباری شود این خط را حذف کن
+    } else if (!/^\+?\d{10,15}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "شماره تماس معتبر نیست";
     }
 
-    if (!formData.gender) {
-      newErrors.gender = "جنسیت الزامی است";
-    }
-
-    if (!formData.injuryType) {
-      newErrors.injuryType = "نوع آسیب الزامی است";
-    }
-
-    if (!formData.affectedSide) {
-      newErrors.affectedSide = "سمت آسیب الزامی است";
-    }
-
-    if (!formData.injuryDate) {
-      newErrors.injuryDate = "تاریخ آسیب الزامی است";
-    }
+    if (!formData.injuryType) newErrors.injuryType = "نوع آسیب الزامی است";
+    if (!formData.affectedSide) newErrors.affectedSide = "سمت آسیب الزامی است";
+    if (!formData.injuryDate) newErrors.injuryDate = "تاریخ آسیب الزامی است";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -134,417 +140,232 @@ export default function AddPatient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setApiError(null);
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
       await patientsApi.create(formData);
       setShowSuccess(true);
-      setTimeout(() => {
-        navigate("/patients");
-      }, 1500);      
-    } 
-    catch (error) {
-        console.error(error);
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
+      setTimeout(() => navigate("/patients"), 1500);
+    } catch (err: any) {
+      console.error(err);
+      const msg = err?.response?.data?.message || "ثبت بیمار انجام نشد";
+      setApiError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    const updateBirthDate = (
-      field: "year" | "month" | "day",
-      value: string
-    ) => {
-      if (field === "month") {
-        const month = Number(value);
+  const updateBirthDate = (field: "year" | "month" | "day", value: string) => {
+    if (field === "month") {
+      const month = Number(value);
+      if (month < 1 || month > 12) return;
+    }
 
-        if (month < 1 || month > 12) {
-          return;
-        }
-      }
+    if (field === "day") {
+      const day = Number(value);
+      if (day < 1 || day > 31) return;
+    }
 
-      if (field === "day") {
-        const day = Number(value);
+    const updated = { ...birthDateJalali, [field]: value };
+    setBirthDateJalali(updated);
 
-        if (day < 1 || day > 31) {
-          return;
-        }
-      }
+    if (updated.year.length === 4 && updated.month && updated.day) {
+      const gregorian = jalaliToGregorian(Number(updated.year), Number(updated.month), Number(updated.day));
+      setFormData({ ...formData, dateOfBirth: gregorian });
+    }
+  };
 
-      const updated = {
-        ...birthDateJalali,
-        [field]: value,
-      };
+  const updateInjuryDate = (field: "year" | "month" | "day", value: string) => {
+    if (field === "month") {
+      const month = Number(value);
+      if (month < 1 || month > 12) return;
+    }
 
-      setBirthDateJalali(updated);
+    if (field === "day") {
+      const day = Number(value);
+      if (day < 1 || day > 31) return;
+    }
 
-      if (
-        updated.year.length === 4 &&
-        updated.month &&
-        updated.day
-      ) {
-        const gregorian = jalaliToGregorian(
-          Number(updated.year),
-          Number(updated.month),
-          Number(updated.day)
-        );
+    const updated = { ...injuryDateJalali, [field]: value };
+    setInjuryDateJalali(updated);
 
-        setFormData({
-          ...formData,
-          dateOfBirth: gregorian,
-        });
-      }
-    };
+    if (updated.year.length === 4 && updated.month && updated.day) {
+      const gregorian = jalaliToGregorian(Number(updated.year), Number(updated.month), Number(updated.day));
+      setFormData({ ...formData, injuryDate: gregorian });
+    }
+  };
 
-    const updateInjuryDate = (
-      field: "year" | "month" | "day",
-      value: string
-    ) => {
-      if (field === "month") {
-        const month = Number(value);
+  return (
+    <div className="animate-fade-in space-y-6 max-w-7xl mx-auto">
+      {showSuccess && <SuccessAlert message="بیمار با موفقیت ثبت شد" />}
 
-        if (month < 1 || month > 12) {
-          return;
-        }
-      }
-
-      if (field === "day") {
-        const day = Number(value);
-
-        if (day < 1 || day > 31) {
-          return;
-        }
-      }
-
-      const updated = {
-        ...injuryDateJalali,
-        [field]: value,
-      };
-
-      setInjuryDateJalali(updated);
-
-      if (
-        updated.year.length === 4 &&
-        updated.month &&
-        updated.day
-      ) {
-        const gregorian = jalaliToGregorian(
-          Number(updated.year),
-          Number(updated.month),
-          Number(updated.day)
-        );
-
-        setFormData({
-          ...formData,
-          injuryDate: gregorian,
-        });
-      }
-    };
-
-    return (
-      <div className="min-h-screen bg-[#061622] text-white p-6">
-        {showSuccess && (
-          <SuccessAlert message="بیمار با موفقیت ثبت شد" />
-        )}
-
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-10 text-center">
-            <h1 className="text-4xl font-bold text-cyan-300 mb-3">
-              افزودن بیمار جدید
-            </h1>
-
-            <p className="text-slate-400">
-              اطلاعات بیمار را وارد کنید
-            </p>
+        {/* Header */}
+        <div className="glass-card rounded-3xl p-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">افزودن بیمار جدید</h1>
+            <p className="text-cyan-100/80 mt-2">اطلاعات بیمار را وارد کنید</p>
           </div>
-
-          <div className="bg-white/5 backdrop-blur-xl border border-cyan-400/20 rounded-3xl p-8 shadow-2xl">
-            <form
-              onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-5"
-            >
-              {/* نام */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="نام"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      firstName: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.firstName ? "border-red-500" : ""
-                  }`}
-                />
-
-                {errors.firstName && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
-
-              {/* نام خانوادگی */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="نام خانوادگی"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      lastName: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.lastName ? "border-red-500" : ""
-                  }`}
-                />
-
-                {errors.lastName && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.lastName}
-                  </p>
-                )}
-              </div>
-
-              {/* کد ملی */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="کد ملی"
-                  value={formData.nationalCode}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      nationalCode: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.nationalCode ? "border-red-500" : ""
-                  }`}
-                />
-
-                {errors.nationalCode && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.nationalCode}
-                  </p>
-                )}
-              </div>
-
-              {/* جنسیت */}
-              <div>
-                <select
-                  value={formData.gender}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      gender: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.gender ? "border-red-500" : ""
-                  }`}
-                >
-                  <option value="">انتخاب جنسیت</option>
-                  <option value="Male">مرد</option>
-                  <option value="Female">زن</option>
-                </select>
-
-                {errors.gender && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.gender}
-                  </p>
-                )}
-              </div>
-
-              {/* تاریخ تولد */}
-              <div>
-                <label className="text-slate-300 mb-3 block">
-                  تاریخ تولد
-                </label>
-
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="1300"
-                    max="1500"
-                    placeholder="سال"
-                    value={birthDateJalali.year}
-                    onChange={(e) =>
-                      updateBirthDate("year", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    placeholder="ماه"
-                    value={birthDateJalali.month}
-                    onChange={(e) =>
-                      updateBirthDate("month", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="روز"
-                    value={birthDateJalali.day}
-                    onChange={(e) =>
-                      updateBirthDate("day", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-                </div>
-
-                {errors.dateOfBirth && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.dateOfBirth}
-                  </p>
-                )}
-              </div>
-
-              {/* تلفن */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="شماره تماس"
-                  value={formData.phoneNumber}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      phoneNumber: e.target.value,
-                    })
-                  }
-                  className="input-style"
-                />
-              </div>
-
-              {/* نوع آسیب */}
-              <div>
-                <input
-                  type="text"
-                  placeholder="نوع آسیب"
-                  value={formData.injuryType}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      injuryType: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.injuryType ? "border-red-500" : ""
-                  }`}
-                />
-
-                {errors.injuryType && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.injuryType}
-                  </p>
-                )}
-              </div>
-
-              {/* سمت آسیب */}
-              <div>
-                <select
-                  value={formData.affectedSide}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      affectedSide: e.target.value,
-                    })
-                  }
-                  className={`input-style ${
-                    errors.affectedSide ? "border-red-500" : ""
-                  }`}
-                >
-                  <option value="">سمت آسیب</option>
-                  <option value="Left">چپ</option>
-                  <option value="Right">راست</option>
-                  <option value="Both">هر دو</option>
-                </select>
-
-                {errors.affectedSide && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.affectedSide}
-                  </p>
-                )}
-              </div>
-
-              {/* تاریخ آسیب */}
-              <div>
-                <label className="text-slate-300 mb-3 block">
-                  تاریخ آسیب
-                </label>
-
-                <div className="flex gap-3">
-                  <input
-                    type="number"
-                    min="1300"
-                    max="1500"
-                    placeholder="سال"
-                    value={injuryDateJalali.year}
-                    onChange={(e) =>
-                      updateInjuryDate("year", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    placeholder="ماه"
-                    value={injuryDateJalali.month}
-                    onChange={(e) =>
-                      updateInjuryDate("month", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    placeholder="روز"
-                    value={injuryDateJalali.day}
-                    onChange={(e) =>
-                      updateInjuryDate("day", e.target.value)
-                    }
-                    className="input-style text-center"
-                  />
-                </div>
-
-                {errors.injuryDate && (
-                  <p className="text-red-400 text-sm mt-2">
-                    {errors.injuryDate}
-                  </p>
-                )}
-              </div>
-
-              {/* دکمه ثبت */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="md:col-span-2 mx-auto w-full md:w-72 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 text-[#021728] font-bold text-lg shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50"
-              >
-                {isSubmitting ? "در حال ثبت..." : "ثبت بیمار"}
-              </button>
-            </form>
-          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="
+              inline-flex w-auto flex-none items-center gap-2
+              px-4 py-2 rounded-xl
+              bg-white/10 hover:bg-white/20
+              border border-white/20
+              text-white transition-all
+            "
+          >
+            <ArrowRight className="w-5 h-5" />
+            بازگشت
+          </button>
         </div>
-      </div>
-    );
+
+        <div className="bg-white/5 backdrop-blur-xl border border-cyan-400/20 rounded-3xl p-8 shadow-2xl">
+          {apiError && (
+            <div className="bg-red-500/20 text-red-300 p-3 rounded-xl mb-6">
+              {apiError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* نام */}
+            <div>
+              <input
+                type="text"
+                placeholder="نام"
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                className={`input-style ${errors.firstName ? "border-red-500" : ""}`}
+              />
+              {errors.firstName && <p className="text-red-400 text-sm mt-2">{errors.firstName}</p>}
+            </div>
+
+            {/* نام خانوادگی */}
+            <div>
+              <input
+                type="text"
+                placeholder="نام خانوادگی"
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                className={`input-style ${errors.lastName ? "border-red-500" : ""}`}
+              />
+              {errors.lastName && <p className="text-red-400 text-sm mt-2">{errors.lastName}</p>}
+            </div>
+
+            {/* کد ملی */}
+            <div>
+              <input
+                type="text"
+                placeholder="کد ملی"
+                value={formData.nationalCode}
+                onChange={(e) => setFormData({ ...formData, nationalCode: e.target.value })}
+                className={`input-style ${errors.nationalCode ? "border-red-500" : ""}`}
+              />
+              {errors.nationalCode && <p className="text-red-400 text-sm mt-2">{errors.nationalCode}</p>}
+            </div>
+
+            {/* جنسیت */}
+            <div>
+              <select
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value as PatientFormData["gender"] })}
+                className={`input-style ${errors.gender ? "border-red-500" : ""}`}
+              >
+                <option value="">انتخاب جنسیت</option>
+                <option value="Male">مرد</option>
+                <option value="Female">زن</option>
+                <option value="Other">سایر</option>
+              </select>
+              {errors.gender && <p className="text-red-400 text-sm mt-2">{errors.gender}</p>}
+            </div>
+
+            {/* تاریخ تولد */}
+            <div>
+              <label className="text-slate-300 mb-3 block">تاریخ تولد</label>
+              <div className="flex gap-3">
+                <input type="number" min="1300" max="1500" placeholder="سال" value={birthDateJalali.year}
+                  onChange={(e) => updateBirthDate("year", e.target.value)} className="input-style text-center" />
+                <input type="number" min="1" max="12" placeholder="ماه" value={birthDateJalali.month}
+                  onChange={(e) => updateBirthDate("month", e.target.value)} className="input-style text-center" />
+                <input type="number" min="1" max="31" placeholder="روز" value={birthDateJalali.day}
+                  onChange={(e) => updateBirthDate("day", e.target.value)} className="input-style text-center" />
+              </div>
+              {errors.dateOfBirth && <p className="text-red-400 text-sm mt-2">{errors.dateOfBirth}</p>}
+            </div>
+
+            {/* تلفن */}
+            <div>
+              <input
+                type="text"
+                placeholder="شماره تماس"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                className={`input-style ${errors.phoneNumber ? "border-red-500" : ""}`}
+              />
+              {errors.phoneNumber && <p className="text-red-400 text-sm mt-2">{errors.phoneNumber}</p>}
+            </div>
+
+            {/* نوع آسیب */}
+            <div>
+              <select
+                value={formData.injuryType}
+                onChange={(e) => setFormData({ ...formData, injuryType: e.target.value as PatientFormData["injuryType"] })}
+                className={`input-style ${errors.injuryType ? "border-red-500" : ""}`}
+              >
+                <option value="">نوع آسیب</option>
+                <option value="Stroke">سکته مغزی</option>
+                <option value="SpinalCordInjury">آسیب نخاعی</option>
+                <option value="TraumaticBrainInjury">آسیب مغزی تروماتیک</option>
+                <option value="Orthopedic">ارتوپدی</option>
+                <option value="Neurological">نورولوژیک</option>
+                <option value="Other">سایر</option>
+              </select>
+              {errors.injuryType && <p className="text-red-400 text-sm mt-2">{errors.injuryType}</p>}
+            </div>
+
+            {/* سمت آسیب */}
+            <div>
+              <select
+                value={formData.affectedSide}
+                onChange={(e) => setFormData({ ...formData, affectedSide: e.target.value as PatientFormData["affectedSide"] })}
+                className={`input-style ${errors.affectedSide ? "border-red-500" : ""}`}
+              >
+                <option value="">سمت آسیب</option>
+                <option value="Left">چپ</option>
+                <option value="Right">راست</option>
+                <option value="Both">هر دو</option>
+              </select>
+              {errors.affectedSide && <p className="text-red-400 text-sm mt-2">{errors.affectedSide}</p>}
+            </div>
+
+            {/* تاریخ آسیب */}
+            <div>
+              <label className="text-slate-300 mb-3 block">تاریخ آسیب</label>
+              <div className="flex gap-3">
+                <input type="number" min="1300" max="1500" placeholder="سال" value={injuryDateJalali.year}
+                  onChange={(e) => updateInjuryDate("year", e.target.value)} className="input-style text-center" />
+                <input type="number" min="1" max="12" placeholder="ماه" value={injuryDateJalali.month}
+                  onChange={(e) => updateInjuryDate("month", e.target.value)} className="input-style text-center" />
+                <input type="number" min="1" max="31" placeholder="روز" value={injuryDateJalali.day}
+                  onChange={(e) => updateInjuryDate("day", e.target.value)} className="input-style text-center" />
+              </div>
+              {errors.injuryDate && <p className="text-red-400 text-sm mt-2">{errors.injuryDate}</p>}
+            </div>
+
+            {/* دکمه ثبت */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="md:col-span-2 mx-auto w-full md:w-72 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 text-[#021728] font-bold text-lg shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50"
+            >
+              {isSubmitting ? "در حال ثبت..." : "ثبت بیمار"}
+            </button>
+          </form>
+        </div>
+    </div>
+  );
 }

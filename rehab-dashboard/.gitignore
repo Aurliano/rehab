@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Electron build output
+release/
+out/
+win-unpacked/
+*.asar
+
+# Electron Builder
+*.blockmap
+latest*.yml
+
+# Environment
+.env
+.env.*
+
+# Coverage
+coverage/

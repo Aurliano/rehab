@@ -123,29 +123,35 @@ const Schedule: React.FC = () => {
   const selectedDaySessions = getSessionsForDay(selectedDay);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="animate-fade-in space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="glass-card rounded-3xl p-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">برنامه جلسات</h1>
+            <p className="text-cyan-100/80 mt-2">مدیریت و زمان‌بندی جلسات توانبخشی</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/add-session")}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
+            >
+              <Plus className="w-5 h-5" />
+              <span>جلسه جدید</span>
+            </button>
             <button
               onClick={() => navigate("/")}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              className="
+                inline-flex w-auto flex-none items-center gap-2
+                px-4 py-2 rounded-xl
+                bg-white/10 hover:bg-white/20
+                border border-white/20
+                text-white transition-all
+              "
             >
-              <ArrowRight className="w-6 h-6 text-white" />
+              <ArrowRight className="w-5 h-5" />
+              بازگشت
             </button>
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-1">برنامه جلسات</h1>
-              <p className="text-purple-200">مدیریت و زمان‌بندی جلسات توانبخشی</p>
-            </div>
           </div>
-          <button
-            onClick={() => navigate("/add-session")}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all shadow-lg"
-          >
-            <Plus className="w-5 h-5" />
-            <span>جلسه جدید</span>
-          </button>
         </div>
 
         {loading ? (
@@ -319,7 +325,6 @@ const Schedule: React.FC = () => {
             )}
           </div>
         )}
-      </div>
     </div>
   );
 };

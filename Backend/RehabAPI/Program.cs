@@ -3,9 +3,16 @@ using RehabAPI.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var dbPath = Path.Combine(AppContext.BaseDirectory, "rehab.db");
+if (!File.Exists(dbPath))
+{
+    // Fallback for local runs from project root.
+    dbPath = Path.Combine(Directory.GetCurrentDirectory(), "rehab.db");
+}
+
 // Add DbContext
 builder.Services.AddDbContext<RehabDbContext>(options =>
-    options.UseSqlite("Data Source=rehab.db"));
+    options.UseSqlite($"Data Source={dbPath}"));
 
 // Add Controllers
 builder.Services.AddControllers()
@@ -19,11 +26,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
+
+builder.WebHost.UseUrls("http://localhost:5271");
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -38,7 +47,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 

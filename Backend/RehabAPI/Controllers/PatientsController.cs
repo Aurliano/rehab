@@ -45,7 +45,7 @@ public async Task<ActionResult<IEnumerable<PatientWithNextSessionDto>>> GetPatie
         NationalCode = p.NationalCode,
         DateOfBirth = p.DateOfBirth,
         Gender = p.Gender,
-        PhoneNumber = p.PhoneNumber,
+        PhoneNumber = p.PhoneNumber ?? string.Empty,
         InjuryType = p.InjuryType,
         AffectedSide = p.AffectedSide,
         InjuryDate = p.InjuryDate,

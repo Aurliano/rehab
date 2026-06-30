@@ -3,10 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:offline": "set ELECTRON_BUILDER_BINARIES_MIRROR=file:///D:/offline/electron-builder-binaries-master/ && npm run electron:build"
   },
   "dependencies": {
     "axios": "^1.15.2",
@@ -22,9 +26,48 @@
     "@typescript-eslint/parser": "^7.0.2",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1",
     "postcss": "^8.5.12",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.2.2",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "com.sayda.rehab",
+    "productName": "Sayda Rehab System",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+
+    "extraResources": [
+      {
+        "from": "../Boat",
+        "to": "Boat",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../Backend/RehabAPI/bin/Release/net8.0/win-x64/publish",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false,
+      "icon": "public/icon.ico"
+    }
   }
 }

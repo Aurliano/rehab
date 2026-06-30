@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "scJ4AhPA6w8=",
+  "dgSpecHash": "vsSVgr1qGX8=",
   "success": true,
   "projectFilePath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI\\RehabAPI.csproj",
   "expectedPackageFiles": [
@@ -54,7 +54,17 @@
     "C:\\Users\\AsA\\.nuget\\packages\\system.reflection.metadata\\6.0.1\\system.reflection.metadata.6.0.1.nupkg.sha512",
     "C:\\Users\\AsA\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "C:\\Users\\AsA\\.nuget\\packages\\system.text.encoding.codepages\\6.0.0\\system.text.encoding.codepages.6.0.0.nupkg.sha512",
-    "C:\\Users\\AsA\\.nuget\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512"
+    "C:\\Users\\AsA\\.nuget\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512",
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.8\\microsoft.netcore.app.runtime.win-x64.8.0.8.nupkg.sha512",
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.8\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.8.nupkg.sha512",
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.8\\microsoft.aspnetcore.app.runtime.win-x64.8.0.8.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json."
+    }
+  ]
 }

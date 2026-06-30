@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "AAF7TUvFEak=",
+  "dgSpecHash": "4VbJr/bpZRg=",
   "success": true,
   "projectFilePath": "C:\\Users\\AsA\\Desktop\\Rehab\\Backend\\RehabAPI.Models\\RehabAPI.Models.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.8\\microsoft.netcore.app.runtime.win-x64.8.0.8.nupkg.sha512",
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.8\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.8.nupkg.sha512",
+    "C:\\Users\\AsA\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.8\\microsoft.aspnetcore.app.runtime.win-x64.8.0.8.nupkg.sha512"
+  ],
   "logs": []
 }
